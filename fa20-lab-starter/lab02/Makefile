@@ -43,6 +43,9 @@ test_bit_ops.c: bit_ops.h
 vector-memcheck: $(VECTOR_PROG)
 	$(MEMCHECK) ./$(VECTOR_PROG)
 
+vector-test: vector.c vector-test.c
+    gcc -ggdb -Wall -std=c99 vector.c vector-test.c -o vector-test
+
 clean:
 	-rm -rf core *.o *~ "#"*"#" Makefile.bak $(BINARIES) *.dSYM
 

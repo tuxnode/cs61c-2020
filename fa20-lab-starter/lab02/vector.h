@@ -49,6 +49,10 @@ vector_t *vector_new();
 /* Return the value in the vector */
 int vector_get(vector_t *v, size_t loc);
 
+void vector_set(vector_t *v, size_t loc, int value);
+void vector_delete(vector_t *v);
+int vector_get(vector_t *v, size_t loc);
+
 /* Set a value in the vector */
 /* YOUR CODE HERE */
 
