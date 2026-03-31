@@ -77,7 +77,29 @@ main:
 # Think: why might having a1 be useful?
 f:
     # YOUR CODE GOES HERE!
+    addi sp, sp, -12
+    sw ra, 0(sp)
+    sw s0, 4(sp)
+    sw s1, 8(sp)
 
+    add t0, t0, x0
+    add t1, t1, x0
+    mv s0, a0
+    mv s1, a1
+
+    # 计算index
+    addi s0, s0, 3
+    # 计算字节偏移量
+    addi t2, x0, 4
+    mul t0, s0, t2
+    addi t1, t1, t0
+
+    lw a0, 0(t1)
+
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw s1, 8(sp)
+    addi sp, sp, 12
     jr ra               # Always remember to jr ra after your function!
 
 print_int:
