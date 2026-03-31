@@ -2,7 +2,7 @@
 
 .data
 arrays: .word 5, 6, 7, 8, 9
-        .word 1, 2, 3, 4, 7
+       .word 1, 2, 3, 4, 7
         .word 5, 2, 7, 4, 3
         .word 1, 6, 3, 8, 4
         .word 5, 2, 7, 8, 1
@@ -16,8 +16,8 @@ main:
     mv s0, a0   # v0 = s0 is head of node list
 
     #print "lists before: "
-    la a1, start_msg
-    li a0, 4
+    la a1, start_msg # 将一个字符串地址加载到s1
+    li a0, 4  # 系统调用
     ecall
 
     #print the list
@@ -46,16 +46,20 @@ main:
     ecall
 
 map:
-    addi sp, sp, -12
+    addi sp, sp, -20
     sw ra, 0(sp)
     sw s1, 4(sp)
     sw s0, 8(sp)
+    sw s2, 12(sp)
+    sw s3, 16(sp)
 
     beq a0, x0, done    # if we were given a null pointer, we're done.
 
     add s0, a0, x0      # save address of this node in s0
     add s1, a1, x0      # save address of function in s1
     add t0, x0, x0      # t0 is a counter
+    add s2, x0, x0
+    add s3, x0, x0
 
     # remember that each node is 12 bytes long:
     # - 4 for the array pointer
@@ -66,30 +70,40 @@ map:
     # are modified by the callees, even when we know the content inside the functions 
     # we call. this is to enforce the abstraction barrier of calling convention.
 mapLoop:
-    add t1, s0, x0      # load the address of the array of current node into t1
+    # add t1, s0, x0      # load the address of the array of current node into t1
     lw t2, 4(s0)        # load the size of the node's array into t2
 
-    add t1, t1, t0      # offset the array address by the count
+    lw t1, 0(s0)
+    slli t3, t0, 2      # 左移2位等于乘2的2次方
+    add t1, t1, t3      # offset the array address by the count
+    mv s2, t0           # 保存计数器数值
+    mv s3, t1
     lw a0, 0(t1)        # load the value at that address into a0
 
     jalr s1             # call the function on that value.
 
+    mv t0, s2
+    mv t1, s3
     sw a0, 0(t1)        # store the returned value back into the array
-    addi t0, t0, 1      # increment the count
+    addi t0, t0, 1      # increment the count 计数器自增
     bne t0, t2, mapLoop # repeat if we haven't reached the array size yet
 
-    la a0, 8(s0)        # load the address of the next node into a0
-    lw a1, 0(s1)        # put the address of the function back into a1 to prepare for the recursion
+    lw a0, 8(s0)        # load the address of the next node into a0
+    # lw a1, 0(s1)        # put the address of the function back into a1 to prepare for the recursion
+    mv a1, s1
 
     jal  map            # recurse
 done:
+    lw s3, 16(sp)
+    lw s2, 12(sp)
     lw s0, 8(sp)
     lw s1, 4(sp)
     lw ra, 0(sp)
-    addi sp, sp, 12
+    addi sp, sp, 20
     jr ra
 
 mystery:
+    # a0 = a0 * a0 * a0
     mul t1, a0, a0
     add a0, t1, a0
     jr ra
@@ -100,17 +114,20 @@ create_default_list:
     li s0, 0  # pointer to the last node we handled
     li s1, 0  # number of nodes handled
     li s2, 5  # size
-    la s3, arrays
+    la s3, arrays # 保存指向node array 的指针
 loop: #do...
     li a0, 12
     jal malloc      # get memory for the next node
-    mv s4, a0
-    li a0, 20
+    mv s4, a0       # 将申请到的地址指针存放到s4
+    li a0, 20       # 为int *arr申请内存
     jal  malloc     # get memory for this array
 
     sw a0, 0(s4)    # node->arr = malloc
-    lw a0, 0(s4)
+    lw a0, 0(s4)    # 值得注意的细节!!
     mv a1, s3
+    # 调用fillArray以一种工具函数的形式
+    # 如果直接使用s3相当于硬编码
+    # 且不符合寄存器调用规范
     jal fillArray   # copy ints over to node->arr
 
     sw s2, 4(s4)    # node->size = size (4)
@@ -122,6 +139,7 @@ loop: #do...
     li t6 5
     bne s1, t6, loop # ... while i!= 5
     mv a0, s4
+    # 恢复寄存器信息
     lw ra, 0(sp)
     addi sp, sp, 4
     jr ra
