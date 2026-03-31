@@ -21,7 +21,7 @@ main:
     ecall # Exit
 
 
-; 栈空间操作
+# 栈空间操作
 factorial:
     addi sp, sp, -8
     sw ra, 4(sp)
@@ -46,7 +46,7 @@ recover:
     addi sp, sp, 8
     ret
 
-; 纯寄存器操作
+# 纯寄存器操作
 factorial_reg:
     # YOUR CODE HERE
     addi t0, x0, 1
